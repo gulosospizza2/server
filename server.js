@@ -1,92 +1,64 @@
 const express = require('express');
 const path = require('path');
+const bodyParser = require('body-parser');
 const server = express();
 
+// Middleware para servir arquivos estáticos e processar requisições POST
 server.use(express.static(path.join(__dirname, 'public')));
+server.use(bodyParser.urlencoded({ extended: true }));
 
+// Redireciona a rota raiz para a página inicial
+server.get('/', (req, res) => {
+    res.redirect('/home');
+});
+
+// Serve a página home.html
 server.get('/home', (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Home</title>
-            <link rel="stylesheet" href="/style.css">
-        </head>
-        <body>
-            <nav>
-                <ul>
-                    <li><a href="/">Início</a></li>
-                    <li><a href="/projects">Projetos</a></li>
-                </ul>
-            </nav>
-
-            <h1>Bem-vindo ao meu site!</h1>
-            <p>Este é o meu site pessoal onde você pode conhecer um pouco mais sobre meus projetos Full Stack e experiências de desenvolvimento web.</p>
-        </body>
-        </html>
-    `);
+    res.sendFile(path.join(__dirname, 'public', 'home.html'));
 });
 
+// Serve a página project.html
 server.get('/projects', (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Projetos</title>
-            <link rel="stylesheet" href="/style.css">
-        </head>
-        <body>
-            <nav>
-                <ul>
-                    <li><a href="/">Início</a></li>
-                    <li><a href="/projects">Projetos</a></li>
-                </ul>
-            </nav>
-
-            <h1>Meus Projetos</h1>
-           </ul>
-    </nav>
-    <h1>Projetos full stack</h1>
-    <table>
-        <tr>
-            <th>Projetos</th>
-            <th>Link dos projetos</th>
-        </tr>
-        <tr>
-            <td>Página inicial</td>
-            <td><a href="#">https://gulosospizza2.github.io/lab-1/</a></td>  
-        </tr> 
-        <tr>
-            <th>Esqueleto do site</th>
-            <td><a href="#">https://gulosospizza2.github.io/lab-02-2/</a></td>
-        </tr>
-        <tr> 
-            <td>Copiando um Modelo</td>
-            <td><a href='#'>https://gulosospizza2.github.io/lab-02/</a></td>  
-        </tr> 
-        <tr> 
-             <td>Adivinhação</td>
-             <td><a href="#">https://gulosospizza2.github.io/lab-04/</a></td>
-        </tr>
-        <tr>
-            <td>Canvas</td> 
-            <td><a href="#">https://gulosospizza2.github.io/lab-5/</a></td>
-        </tr>
-        <tr> 
-             <td>Animação</td> 
-             <td><a href="#">https://gulosospizza2.github.io/lab-066/</a></td>
-        </tr>
-    </table>
-        </body>
-        </html>
-    `);
+    res.sendFile(path.join(__dirname, 'public', 'project.html'));
 });
-    
+
+// Serve a página Cadastro.html
+server.get('/cadastra', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'Cadastro.html'));
+});
+
+// Serve a página Login.html
+server.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'Login.html'));
+});
+
+// Configuração do EJS para renderizar páginas dinâmicas
+server.set('view engine', 'ejs');
+server.set('views', path.join(__dirname, 'views'));
+
+// Simula um banco de dados em memória para usuários
+const users = [];
+
+// Rota para processar o cadastro
+server.post('/cadastra', (req, res) => {
+    const { username, password } = req.body;
+    if (users.find(user => user.username === username)) {
+        return res.send('Usuário já cadastrado!');
+    }
+    users.push({ username, password });
+    res.send('Cadastro realizado com sucesso! <a href="/login">Ir para Login</a>');
+});
+
+// Rota para processar o login e renderizar a resposta dinâmica
+server.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    const user = users.find(user => user.username === username && user.password === password);
+    const status = user ? 'Sucesso' : 'Falha';
+    res.render('resposta', { username, status });
+});
+
+// Inicia o servidor na porta 80
 server.listen(80, () => {
     console.log('Servidor rodando na porta 80');
-    console.log('Acesse pelo navegador: http://<seu-ip>/');
+    console.log('Acesse pelo navegador: http://localhost/');
 });
