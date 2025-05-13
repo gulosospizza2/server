@@ -2,14 +2,28 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const server = express();
+const { MongoClient } = require('mongodb');
+const uri = 'mongodb://localhost:27017'; // URL do MongoDB (ajuste conforme necessário)
+const client = new MongoClient(uri);
+
+let db;
+
+// Conecta ao banco de dados
+client.connect()
+    .then(() => {
+        db = client.db('blogDB'); // Nome do banco de dados
+        console.log('Conectado ao MongoDB');
+    })
+    .catch(err => {
+        console.error('Erro ao conectar ao MongoDB:', err);
+    });
 
 // Middleware para servir arquivos estáticos e processar requisições POST
 server.use(express.static(path.join(__dirname, 'public')));
 server.use(bodyParser.urlencoded({ extended: true }));
 
-// Redireciona a rota raiz para a página inicial
 server.get('/', (req, res) => {
-    res.redirect('/home');
+    res.redirect('/projects');
 });
 
 // Serve a página home.html
@@ -55,6 +69,43 @@ server.post('/login', (req, res) => {
     const user = users.find(user => user.username === username && user.password === password);
     const status = user ? 'Sucesso' : 'Falha';
     res.render('resposta', { username, status });
+});
+const posts = []; // Simula um banco de dados em memória para posts
+
+server.get('/blog', async (req, res) => {
+    try {
+        const collection = db.collection('posts');
+        const posts = await collection.find().toArray(); // Busca todos os posts
+        res.render('blog', { posts });
+    } catch (err) {
+        console.error('Erro ao buscar posts:', err);
+        res.status(500).send('Erro ao carregar posts.');
+    }
+});
+
+// Serve a página cadastrar_post.html
+server.get('/cadastrar_post', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'cadastrar_post.html'));
+}); 
+
+server.post('/cadastrar_post', async (req, res) => {
+    const { titulo, resumo, conteudo } = req.body;
+
+    try {
+        const collection = db.collection('posts'); // Nome da coleção
+        await collection.insertOne({ titulo, resumo, conteudo });
+        res.redirect('/blog');
+    } catch (err) {
+        console.error('Erro ao cadastrar post:', err);
+        res.status(500).send('Erro ao cadastrar post.');
+    }
+});
+
+// Rota para cadastrar um novo post
+server.post('/cadastrar_post', (req, res) => {
+    const { titulo, resumo, conteudo } = req.body;
+    posts.push({ titulo, resumo, conteudo });
+    res.redirect('/blog');
 });
 
 // Inicia o servidor na porta 80
